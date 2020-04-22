@@ -108,7 +108,8 @@ defmodule VintageNetMobile do
     %RawConfig{
       ifname: ifname,
       type: __MODULE__,
-      source_config: config
+      source_config: config,
+      required_ifnames: [ppp_to_wwan(ifname)]
     }
     |> modem.add_raw_config(config, opts)
     |> add_start_commands(modem)
@@ -121,11 +122,9 @@ defmodule VintageNetMobile do
   @impl true
   def check_system(_), do: {:error, "unimplemented"}
 
-  defp add_start_commands(raw_config, modem) do
-    # The modem.ready call checks whether the modem exists and can be started.
+  defp add_start_commands(raw_config, _modem) do
     # The mknod creates `/dev/ppp` if it doesn't exist.
     new_up_cmds = [
-      {:fun, modem, :ready, []},
       {:run_ignore_errors, "mknod", ["/dev/ppp", "c", "108", "0"]} | raw_config.up_cmds
     ]
 
@@ -141,4 +140,7 @@ defmodule VintageNetMobile do
 
     %RawConfig{raw_config | down_cmds: cmds}
   end
+
+  defp ppp_to_wwan("ppp" <> index), do: "wwan" <> index
+  defp ppp_to_wwan(something_else), do: something_else
 end
